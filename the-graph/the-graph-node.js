@@ -218,13 +218,17 @@
       // Don't show native context menu
       event.preventDefault();
 
-      // Don't tap graph on hold event
-      event.stopPropagation();
-      if (event.preventTap) { event.preventTap(); }
+      console.log(event);
 
       // Get mouse position
-      var x = event.x || event.clientX || 0;
-      var y = event.y || event.clientY || 0;
+      var x, y;
+      if (event.center) {
+        x = event.center.x;
+        y = event.center.y;
+      } else {
+        x = event.clientX || 0;
+        y = event.clientY || 0;
+      }
 
       // App.showContext
       this.props.showContext({
