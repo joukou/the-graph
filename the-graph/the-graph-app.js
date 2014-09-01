@@ -240,18 +240,13 @@
     componentDidMount: function () {
       var domNode = this.getDOMNode();
 
-      // Unselect edges and nodes
-      if (this.props.onNodeSelection) {
-        domNode.addEventListener("tap", this.unselectAll);
-      }
-
-      // Pan and pinch gesture listeners
       if (Hammer) {
-        var hammertime = new Hammer(domNode, {});
-        hammertime.get('pinch').set({ enable: true });
-        hammertime.get('pan').set({ direction: Hammer.DIRECTION_ALL });
-
         var mc = new Hammer.Manager(domNode, {});
+
+        // Unselect edges and nodes
+        mc.add( new Hammer.Tap({}) );
+        mc.on("tap", this.unselectAll);
+
         mc.add(new Hammer.Pan({ 
           direction: Hammer.DIRECTION_ALL, 
           threshold: 0 
@@ -261,7 +256,9 @@
 
         var is_touch_device = 'ontouchstart' in document.documentElement;
         if (is_touch_device) {
-          mc.add(new Hammer.Pinch({threshold: 0}));
+          mc.add(new Hammer.Pinch({
+            threshold: 0
+          }));
           mc.on("pinchstart", this.onPinchStart);
           mc.on("pinchmove", this.onPinchMove);
         }
@@ -322,8 +319,12 @@
     },
     unselectAll: function (event) {
       // No arguments = clear selection
-      this.props.onNodeSelection();
-      this.props.onEdgeSelection();
+      if (this.props.onNodeSelection) {
+        this.props.onNodeSelection();
+      }
+      if (this.props.onEdgeSelection) {
+        this.props.onEdgeSelection();
+      }
     },
     renderGraph: function () {
       this.refs.graph.markDirty();

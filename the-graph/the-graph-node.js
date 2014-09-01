@@ -94,29 +94,44 @@
       TheGraph.mixins.Tooltip
     ],
     componentDidMount: function () {
+      var domNode = this.getDOMNode();
+      var mc = new Hammer.Manager(domNode, {});
       // Dragging
-      this.getDOMNode().addEventListener("trackstart", this.onTrackStart);
+      mc.add(new Hammer.Pan({ 
+        direction: Hammer.DIRECTION_ALL, 
+        threshold: 0 
+      }));
+      mc.on("panstart", this.onPanStart);
+      mc.on("panmove", this.onPanMove);
+      mc.on("panend", this.onPanEnd);
 
       // Tap to select
       if (this.props.onNodeSelection) {
-        this.getDOMNode().addEventListener("tap", this.onNodeSelection, true);
+        mc.add( new Hammer.Tap({}) );
+        mc.on("tap", this.onNodeSelection);
+        // HACK to not tap app
+        var stop = function (event) { event.stopPropagation(); };
+        domNode.addEventListener("mousedown", stop);
+        domNode.addEventListener("touchdown", stop);
       }
 
       // Context menu
       if (this.props.showContext) {
-        this.getDOMNode().addEventListener("contextmenu", this.showContext);
-        this.getDOMNode().addEventListener("hold", this.showContext);
+        domNode.addEventListener("contextmenu", this.showContext);
+        // domNode.addEventListener("hold", this.showContext);
+        mc.add(new Hammer.Press({
+          threshold: 5,
+          time: 500
+        }));
+        mc.on("press", this.showContext);
       }
 
     },
     onNodeSelection: function (event) {
-      // Don't tap app (unselect)
-      event.stopPropagation();
-
       var toggle = (TheGraph.metaKeyPressed || event.pointerType==="touch");
       this.props.onNodeSelection(this.props.key, this.props.node, toggle);
     },
-    onTrackStart: function (event) {
+    onPanStart: function (event) {
       // Don't drag graph
       event.stopPropagation();
 
@@ -129,9 +144,6 @@
       // Don't drag while pinching
       if (this.props.app.pinching) { return; }
 
-      this.getDOMNode().addEventListener("track", this.onTrack);
-      this.getDOMNode().addEventListener("trackend", this.onTrackEnd);
-
       // Moving a node should only be a single transaction
       if (this.props.export) {
         this.props.graph.startTransaction('moveexport');
@@ -139,7 +151,7 @@
         this.props.graph.startTransaction('movenode');
       }
     },
-    onTrack: function (event) {
+    onPanMove: function (event) {
       // Don't fire on graph
       event.stopPropagation();
 
@@ -168,12 +180,9 @@
         });
       }
     },
-    onTrackEnd: function (event) {
+    onPanEnd: function (event) {
       // Don't fire on graph
       event.stopPropagation();
-
-      this.getDOMNode().removeEventListener("track", this.onTrack);
-      this.getDOMNode().removeEventListener("trackend", this.onTrackEnd);
 
       // Snap to grid
       var snapToGrid = true;
