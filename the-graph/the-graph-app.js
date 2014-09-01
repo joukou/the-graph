@@ -130,47 +130,35 @@
         tooltipVisible: false
       });
     },
-    lastScale: 1,
-    lastX: 0,
-    lastY: 0,
-    pinching: false,
-    onTransformStart: function (event) {
-      // Don't drag nodes
-      event.stopPropagation();
-      event.stopImmediatePropagation();
-
-      // Hammer.js
-      this.lastScale = 1;
-      this.lastX = event.gesture.center.clientX;
-      this.lastY = event.gesture.center.clientY;
-      this.pinching = true;
+    lastPinch: {x:0, y:0, scale:1},
+    onPinchStart: function (event) {
+      this.lastPinch = {
+        x: event.center.x,
+        y: event.center.y,
+        scale: 1
+      };
     },
-    onTransform: function (event) {
-      // Don't drag nodes
-      event.stopPropagation();
-      event.stopImmediatePropagation();
-
-      // Hammer.js
-      var currentScale = this.state.scale;
+    onPinchMove: function (event) {
       var currentX = this.state.x;
       var currentY = this.state.y;
 
-      var scaleEvent = event.gesture.scale;
-      var scaleDelta = 1 + (scaleEvent - this.lastScale);
-      this.lastScale = scaleEvent;
+      var currentScale = this.state.scale;
+      var scaleEvent = event.scale;
+      var scaleDelta = 1 + (scaleEvent - this.lastPinch.scale);
+      this.lastPinch.scale = scaleEvent;
       var scale = scaleDelta * currentScale;
       scale = Math.max(scale, this.minZoom);
 
       // Zoom and pan transform-origin equivalent
-      var oX = event.gesture.center.clientX;
-      var oY = event.gesture.center.clientY;
-      var deltaX = oX - this.lastX;
-      var deltaY = oY - this.lastY;
+      var oX = event.center.x;
+      var oY = event.center.y;
+      var deltaX = oX - this.lastPinch.x;
+      var deltaY = oY - this.lastPinch.y;
       var x = scaleDelta * (currentX - oX) + oX + deltaX;
       var y = scaleDelta * (currentY - oY) + oY + deltaY;
 
-      this.lastX = oX;
-      this.lastY = oY;
+      this.lastPinch.x = oX;
+      this.lastPinch.y = oY;
 
       this.setState({
         scale: scale,
@@ -179,32 +167,22 @@
         tooltipVisible: false
       });
     },
-    onTransformEnd: function (event) {
-      // Don't drag nodes
-      event.stopPropagation();
-      event.stopImmediatePropagation();
-
-      // Hammer.js
-      this.pinching = false;
+    lastPan: {x:0, y:0},
+    onPanStart: function (event) {
+      this.lastPan = {
+        x: 0,
+        y: 0
+      };
     },
-    onTrackStart: function (event) {
-      event.preventTap();
-      this.getDOMNode().addEventListener("track", this.onTrack);
-      this.getDOMNode().addEventListener("trackend", this.onTrackEnd);
-    },
-    onTrack: function (event) {
-      if ( this.pinching ) { return; }
+    onPanMove: function (event) {
+      var dX = event.deltaX - this.lastPan.x;
+      var dY = event.deltaY - this.lastPan.y;
       this.setState({
-        x: this.state.x + event.ddx,
-        y: this.state.y + event.ddy
+        x: this.state.x + dX,
+        y: this.state.y + dY
       });
-    },
-    onTrackEnd: function (event) {
-      // Don't click app (unselect)
-      event.stopPropagation();
-
-      this.getDOMNode().removeEventListener("track", this.onTrack);
-      this.getDOMNode().removeEventListener("trackend", this.onTrackEnd);
+      this.lastPan.x = event.deltaX;
+      this.lastPan.y = event.deltaY;
     },
     onPanScale: function () {
       // Pass pan/scale out to the-graph
@@ -267,23 +245,26 @@
         domNode.addEventListener("tap", this.unselectAll);
       }
 
-      // Don't let Hammer.js collide with polymer-gestures
+      // Pan and pinch gesture listeners
       if (Hammer) {
-        Hammer(domNode, {
-          tap: false,
-          hold: false, 
-          transform: true
-        });
-      }
+        var hammertime = new Hammer(domNode, {});
+        hammertime.get('pinch').set({ enable: true });
+        hammertime.get('pan').set({ direction: Hammer.DIRECTION_ALL });
 
-      // Pointer gesture events for pan/zoom
-      domNode.addEventListener("trackstart", this.onTrackStart);
+        var mc = new Hammer.Manager(domNode, {});
+        mc.add(new Hammer.Pan({ 
+          direction: Hammer.DIRECTION_ALL, 
+          threshold: 0 
+        }));
+        mc.on("panstart", this.onPanStart);
+        mc.on("panmove", this.onPanMove);
 
-      var is_touch_device = 'ontouchstart' in document.documentElement;
-      if( is_touch_device && Hammer ){
-        Hammer(domNode).on("transformstart", this.onTransformStart);
-        Hammer(domNode).on("transform", this.onTransform);
-        Hammer(domNode).on("transformend", this.onTransformEnd);
+        var is_touch_device = 'ontouchstart' in document.documentElement;
+        if (is_touch_device) {
+          mc.add(new Hammer.Pinch({threshold: 0}));
+          mc.on("pinchstart", this.onPinchStart);
+          mc.on("pinchmove", this.onPinchMove);
+        }
       }
 
       // Wheel to zoom
