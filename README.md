@@ -1,5 +1,6 @@
-The Graph Editor [![Build Status](https://secure.travis-ci.org/the-grid/the-graph.png?branch=master)](http://travis-ci.org/the-grid/the-graph) [![MIT license](http://img.shields.io/badge/License-MIT-brightgreen.svg)](#license)
+The Graph Editor
 ================
+[![Circle CI](https://circleci.com/gh/joukou/the-graph/tree/joukou-develop.png?style=badge&circle-token=1f17abceecf1d37ffeede7a076d8cc9272f04f70)](https://circleci.com/gh/joukou/the-graph/tree/joukou-develop) [![MIT license](http://img.shields.io/badge/License-MIT-brightgreen.svg)](#license)
 
 This project provides a set of [Web Components](http://www.polymer-project.org/) for viewing and editing flow-based programming graphs. The focus is on performance, usage of modern web technologies, and touchscreen friendliness.
 
