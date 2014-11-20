@@ -203,6 +203,12 @@
         }
       }
 
+      var nodeMoveEvent = new CustomEvent('moveNode', {
+        detail: this.props
+      });
+
+      domNode.dispatchEvent(nodeMoveEvent);
+
       // Moving a node should only be a single transaction
       if (this.props.export) {
         this.props.graph.endTransaction('moveexport');

@@ -109,11 +109,26 @@
           this.$.svgcontainer
         );
         this.graphView = this.appView.refs.graph;
+        var graphChanged = new CustomEvent("graphChanged", {
+          detail: {
+            oldGraph: oldGraph,
+            newGraph: newGraph
+          }
+        });
+        this.dispatchEvent(graphChanged)
       },
       onPanScale: function (x, y, scale) {
         this.pan[0] = x;
         this.pan[1] = y;
         this.scale = scale;
+        var graphChanged = new CustomEvent("stateChanged", {
+          detail: {
+            x: x,
+            y: y,
+            scale: scale
+          }
+        });
+        this.dispatchEvent(graphChanged)
       },
       onEdgeSelection: function (itemKey, item, toggle) {
         if (itemKey === undefined) {
