@@ -199,12 +199,6 @@
         }
       }
 
-      var nodeMoveEvent = new CustomEvent('moveNode', {
-        detail: this.props
-      });
-
-      domNode.dispatchEvent(nodeMoveEvent);
-
       // Moving a node should only be a single transaction
       if (this.props.export) {
         this.props.graph.endTransaction('moveexport');
@@ -326,6 +320,19 @@
       return (this.props.app.state.scale < TheGraph.zbpNormal);
     },
     shouldComponentUpdate: function (nextProps, nextState) {
+      //Placing this here means that it will always
+      //trigger the event, for example if a group
+      //was moved all at once
+      if (
+          nextProps.x !== this.props.x &&
+          nextProps.y !== this.props.y
+      ) {
+        var domNode = this.getDOMNode();
+        var nodeMoveEvent = new CustomEvent('moveNode', {
+          detail: this.props
+        });
+        domNode.dispatchEvent(nodeMoveEvent);
+      }
       // Only rerender if changed
       return (
         nextProps.x !== this.props.x || 
